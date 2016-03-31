@@ -1,0 +1,22 @@
+{
+  "name": "psybaron/cascms-page-module",
+  "type": "asgard-module",
+  "description": "Page module for CasCMS. Page management.",
+  "keywords": [
+    "cascms",
+    "pages"
+  ],
+  "license": "MIT",
+  "authors": [
+    {
+      "name": "Marko Aleksic",
+      "email": "info@carniadesign.com",
+      "role": "Developer"
+    }
+  ],
+  "require": {
+    "php": ">=5.4",
+    "composer/installers": "~1.0"
+  },
+  "minimum-stability": "dev"
+}

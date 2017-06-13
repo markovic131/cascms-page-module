@@ -5,6 +5,7 @@ use Modules\Page\Entities\Page;
 use Modules\Page\Http\Requests\CreatePageRequest;
 use Modules\Page\Http\Requests\UpdatePageRequest;
 use Modules\Page\Repositories\PageRepository;
+use Modules\Page\Events\PageWasDeleted;
 
 class PageController extends AdminBaseController
 {
@@ -35,6 +36,8 @@ class PageController extends AdminBaseController
      */
     public function create()
     {
+        $this->assetPipeline->requireJs('ckeditor.js');
+
         return view('page::admin.create');
     }
 
@@ -62,7 +65,6 @@ class PageController extends AdminBaseController
     public function edit(Page $page)
     {
         $this->assetPipeline->requireJs('ckeditor.js');
-        $this->assetPipeline->requireCss('icheck.blue.css');
 
         return view('page::admin.edit', compact('page'));
     }
@@ -80,7 +82,11 @@ class PageController extends AdminBaseController
 
         flash(trans('page::messages.page updated'));
 
-        return redirect()->route('admin.page.page.index');
+        if ($request->get('button') === 'index') {
+            return redirect()->route('admin.page.page.index');
+        }
+
+        return redirect()->back();
     }
 
     /**

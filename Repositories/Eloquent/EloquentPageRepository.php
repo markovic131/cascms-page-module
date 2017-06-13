@@ -1,7 +1,9 @@
 <?php namespace Modules\Page\Repositories\Eloquent;
 
+use Illuminate\Database\Eloquent\Builder;
 use Modules\Core\Repositories\Eloquent\EloquentBaseRepository;
 use Modules\Page\Events\PageWasCreated;
+use Modules\Page\Events\PageWasDeleted;
 use Modules\Page\Events\PageWasUpdated;
 use Modules\Page\Repositories\PageRepository;
 
@@ -31,6 +33,9 @@ class EloquentPageRepository extends EloquentBaseRepository implements PageRepos
      */
     public function create($data)
     {
+        if (array_get($data, 'is_home') === '1') {
+            $this->removeOtherHomepage();
+        }
         $page = $this->model->create($data);
 
         event(new PageWasCreated($page->id, $data));
@@ -45,10 +50,55 @@ class EloquentPageRepository extends EloquentBaseRepository implements PageRepos
      */
     public function update($model, $data)
     {
+        if (array_get($data, 'is_home') === '1') {
+            $this->removeOtherHomepage($model->id);
+        }
         $model->update($data);
 
         event(new PageWasUpdated($model->id, $data));
 
         return $model;
+    }
+
+    public function destroy($model)
+    {
+        event(new PageWasDeleted($model));
+
+        return $model->delete();
+    }
+
+    /**
+     * @param $slug
+     * @param $locale
+     * @return object
+     */
+    public function findBySlugInLocale($slug, $locale)
+    {
+        if (method_exists($this->model, 'translations')) {
+            return $this->model->whereHas('translations', function (Builder $q) use ($slug, $locale) {
+                $q->where('slug', $slug);
+                $q->where('locale', $locale);
+            })->with('translations')->first();
+        }
+
+        return $this->model->where('slug', $slug)->where('locale', $locale)->first();
+    }
+
+    /**
+     * Set the current page set as homepage to 0
+     * @param null $pageId
+     */
+    private function removeOtherHomepage($pageId = null)
+    {
+        $homepage = $this->findHomepage();
+        if ($homepage === null) {
+            return;
+        }
+        if ($pageId === $homepage->id) {
+            return;
+        }
+
+        $homepage->is_home = 0;
+        $homepage->save();
     }
 }
